@@ -3,15 +3,22 @@ import { Upload, FileText, X } from 'lucide-react';
 import heroBg from '@/assets/hero-bg.jpg';
 
 interface UploadZoneProps {
-  onFileLoaded: (text: string, filename: string) => void;
+  onFileLoaded: (text: string, filename: string, file: File) => void;
 }
 
 export function UploadZone({ onFileLoaded }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const processFile = (file: File) => {
     setError(null);
+
+    if (!consentChecked) {
+      setError('You must consent to secure storage before uploading.');
+      return;
+    }
+
     if (!file.name.endsWith('.txt')) {
       setError('Please upload a .txt file exported from WhatsApp.');
       return;
@@ -19,7 +26,7 @@ export function UploadZone({ onFileLoaded }: UploadZoneProps) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      onFileLoaded(text, file.name);
+      onFileLoaded(text, file.name, file);
     };
     reader.readAsText(file, 'UTF-8');
   };
@@ -98,6 +105,21 @@ export function UploadZone({ onFileLoaded }: UploadZoneProps) {
             <span className="text-sm">{error}</span>
           </div>
         )}
+
+        <label className="mt-4 flex items-start gap-3 text-left p-4 rounded-xl border" style={{ borderColor: 'hsl(var(--border))', background: 'hsl(var(--card) / 0.7)' }}>
+          <input
+            type="checkbox"
+            checked={consentChecked}
+            onChange={(e) => {
+              setConsentChecked(e.target.checked);
+              if (e.target.checked) setError(null);
+            }}
+            className="mt-1 h-4 w-4 accent-red-500"
+          />
+          <span className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+            I consent to having this chat file stored securely for analysis.
+          </span>
+        </label>
 
         <p className="mt-6 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
           💡 Export: WhatsApp → Chat → More → Export Chat (without media)
