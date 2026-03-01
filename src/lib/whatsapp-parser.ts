@@ -57,16 +57,36 @@ export function parseWhatsAppChat(text: string): ParsedMessage[] {
   }
   if (current) messages.push(current);
 
-  // Filter system messages
-  return messages.filter(m =>
-    m.sender !== 'You' || m.message.length > 0
-  ).filter(m =>
-    !m.message.includes('Messages and calls are end-to-end encrypted') &&
-    !m.message.includes('Your security code with') &&
-    !m.message.includes('changed their phone number') &&
-    !m.message.includes('added') &&
-    m.sender.length > 0
-  );
+  // System message patterns — WhatsApp injects these with no real sender
+  const SYSTEM_PATTERNS = [
+    /Messages and calls are end-to-end encrypted/i,
+    /Your security code with/i,
+    /changed their phone number/i,
+    /\u200e?Messages to this group are now secured/i,
+    /\u200e?Messages to this chat are now secured/i,
+    /^<Media omitted>$/i,
+    /^This message was deleted$/i,
+    /^null$/i,
+    /changed the subject/i,
+    /changed the group/i,
+    /added you$/i,
+    /left$/i,
+    /was added$/i,
+    /^You joined using this group's invite link$/i,
+    /^Your messages and calls are secured with end-to-end encryption/i,
+  ];
+
+  const isSystemSender = (sender: string) =>
+    sender.length === 0 ||
+    /^\+?\d[\d\s\-()]{6,}$/.test(sender) && sender.length < 5; // bare number fragments
+
+  return messages.filter(m => {
+    if (isSystemSender(m.sender)) return false;
+    if (SYSTEM_PATTERNS.some(p => p.test(m.message))) return false;
+    // Senders that are purely phone numbers with no name are typically system entries
+    if (/^[\u200e\u200f\u202a-\u202e]/.test(m.sender)) return false;
+    return true;
+  });
 }
 
 export function computeStats(messages: ParsedMessage[]): ChatStats {
