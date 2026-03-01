@@ -31,7 +31,6 @@ function buildContext(messages: ParsedMessage[], stats: ChatStats): string {
 
   // Include a sample of actual messages (last 200) for richer answers
   const sample = messages
-    .slice(-200)
     .map(m => `[${m.date} ${m.time}] ${m.sender}: ${m.message}`)
     .join('\n');
 
@@ -43,7 +42,7 @@ STATISTICS:
 - Messages per person: ${topSenders}
 - Busiest days: ${busyDays}
 
-RECENT MESSAGES SAMPLE (last 200):
+FULL CHAT HISTORY:
 ${sample}
 
 Answer concisely and factually based on the above data.`;
