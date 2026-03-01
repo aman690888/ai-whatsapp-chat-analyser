@@ -1,73 +1,69 @@
-# Welcome to your Lovable project
+# WhatsApp Chat Analyzer (ChatLens)
 
-## Project info
+Single-page React app that parses exported WhatsApp chats (`.txt`), computes analytics, and answers questions about the chat using Gemini.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
 
-## How can I edit this code?
+- Vite + React + TypeScript
+- Tailwind CSS + shadcn/ui primitives
+- Recharts for data visualization
+- Lucide React icons
+- Gemini REST API (`gemini-2.5-flash`)
 
-There are several ways of editing your application.
+## Codebase Structure Review
 
-**Use Lovable**
+```text
+.
+├── src/
+│   ├── assets/                # Static assets (hero background)
+│   ├── components/
+│   │   ├── AIChat.tsx         # Gemini chat UI + API key modal/state
+│   │   ├── Charts.tsx         # Recharts visualizations
+│   │   ├── SummaryCards.tsx   # KPI cards (messages, participants, etc.)
+│   │   ├── UploadZone.tsx     # Drag-and-drop / file input surface
+│   │   └── ui/                # shadcn/ui component primitives
+│   ├── hooks/                 # Shared hooks (toast/mobile)
+│   ├── lib/
+│   │   ├── whatsapp-parser.ts # Chat parsing + analytics aggregation
+│   │   ├── gemini-ai.ts       # Gemini request and context construction
+│   │   ├── mock-ai.ts         # Mock AI fallback helper
+│   │   └── utils.ts           # Utility helpers
+│   ├── pages/
+│   │   ├── Index.tsx          # Main app state machine (upload/loading/dashboard)
+│   │   └── NotFound.tsx       # Router fallback page
+│   ├── App.tsx                # Providers + routes
+│   └── main.tsx               # React entry point
+├── public/                    # Static public files
+├── src/test/                  # Vitest setup and example test
+└── config files               # Vite, Tailwind, ESLint, TS, Vitest
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Runtime Flow
 
-Changes made via Lovable will be committed automatically to this repo.
+1. `UploadZone` accepts a WhatsApp-exported `.txt` file and reads it with `FileReader`.
+2. `Index` invokes `parseWhatsAppChat` and stores normalized `ParsedMessage[]`.
+3. `computeStats` derives participant/message/date/month aggregates used in cards/charts.
+4. Analytics tab renders KPI cards + charts from the computed stats.
+5. AI tab sends user questions plus full chat context to Gemini and renders responses.
 
-**Use your preferred IDE**
+## Notable Design Choices
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Parsing is regex-based and supports common WhatsApp date/time variants.
+- Multi-line messages are reconstructed by appending non-header lines to the prior message.
+- Some known system-message patterns are filtered before analytics.
+- Gemini API keys are stored in `localStorage` and only used client-side.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Local Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Quality Checks
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```sh
+npm run lint
+npm run test
+npm run build
+```
