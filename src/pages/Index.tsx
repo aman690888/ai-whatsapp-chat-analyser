@@ -13,6 +13,7 @@ import {
 } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
 import { AIVibeCard } from '@/components/AIVibeCard';
+import { BehaviorCards } from '@/components/BehaviorCards';
 import { FileText, RotateCcw, Loader2, Key } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
@@ -173,6 +174,9 @@ const Index = () => {
             />
 
             <SummaryCards stats={stats} />
+
+            {/* Behavioral metrics row */}
+            <BehaviorCards stats={stats} />
 
             {/* Row 1: messages per user + activity over time */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
