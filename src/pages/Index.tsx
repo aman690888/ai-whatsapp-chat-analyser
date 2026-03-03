@@ -7,7 +7,7 @@ import { MessagesPerUserChart, ActivityOverTimeChart } from '@/components/Charts
 import { AIChat } from '@/components/AIChat';
 import { ChatLensWrapped } from '@/components/ChatLensWrapped';
 import { FileText, RotateCcw, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 type View = 'upload' | 'loading' | 'dashboard';
 
@@ -25,6 +25,11 @@ const Index = () => {
   const uploadChatArchive = async (file: File) => {
     const ext = file.name.split('.').pop() || 'txt';
     const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+    if (!isSupabaseConfigured || !supabase) {
+      console.warn('Supabase upload skipped: missing environment configuration.');
+      return;
+    }
 
     const { error } = await supabase.storage
       .from('chat_archives')

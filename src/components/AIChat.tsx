@@ -143,7 +143,7 @@ export function AIChat({ messages: parsedMessages, stats }: AIChatProps) {
           </div>
           <div>
             <p className="font-semibold text-sm" style={{ color: 'hsl(var(--foreground))' }}>Gemini AI Assistant</p>
-            <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>Powered by gemini-1.5-flash</p>
+            <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>Powered by gemini-2.5-flash</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <div className="flex items-center gap-1.5">
