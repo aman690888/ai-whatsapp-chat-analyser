@@ -17,6 +17,10 @@ export interface ChatStats {
   messagesByHour: Record<number, number>;
   messagesByDayOfWeek: Record<string, number>;
   topEmojis: { emoji: string; count: number }[];
+  // Behavioral metrics
+  conversationStarters: Record<string, number>;
+  mediaLinkSharer: Record<string, number>;
+  doubleTexter: Record<string, number>;
 }
 
 // Matches: DD/MM/YYYY, HH:MM - Sender: Message
@@ -94,6 +98,9 @@ export function parseWhatsAppChat(text: string): ParsedMessage[] {
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+const MEDIA_REGEX = /<Media omitted>/i;
+const URL_REGEX = /https?:\/\/\S+/i;
+
 export function computeStats(messages: ParsedMessage[]): ChatStats {
   const messagesByUser: Record<string, number> = {};
   const messagesByDate: Record<string, number> = {};
@@ -102,11 +109,45 @@ export function computeStats(messages: ParsedMessage[]): ChatStats {
   const messagesByHour: Record<number, number> = {};
   const messagesByDayOfWeek: Record<string, number> = {};
   const emojiCount: Record<string, number> = {};
+  const conversationStarters: Record<string, number> = {};
+  const mediaLinkSharer: Record<string, number> = {};
+  const doubleTexter: Record<string, number> = {};
   const participantSet = new Set<string>();
 
   for (let h = 0; h < 24; h++) messagesByHour[h] = 0;
   for (const d of DAYS) messagesByDayOfWeek[d] = 0;
 
+  // ── Behavioral passes ──────────────────────────────────────────────────────
+
+  // Conversation starters: gap > 8 hours from previous message
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (i === 0) {
+      conversationStarters[msg.sender] = (conversationStarters[msg.sender] || 0) + 1;
+      continue;
+    }
+    const prev = messages[i - 1];
+    const gapHours = (msg.timestamp.getTime() - prev.timestamp.getTime()) / 3_600_000;
+    if (gapHours > 8) {
+      conversationStarters[msg.sender] = (conversationStarters[msg.sender] || 0) + 1;
+    }
+  }
+
+  // Double-texter: 3+ consecutive messages without a reply
+  let streak = 1;
+  for (let i = 1; i < messages.length; i++) {
+    if (messages[i].sender === messages[i - 1].sender) {
+      streak++;
+      if (streak === 3) {
+        const sender = messages[i].sender;
+        doubleTexter[sender] = (doubleTexter[sender] || 0) + 1;
+      }
+    } else {
+      streak = 1;
+    }
+  }
+
+  // ── Main stats loop ────────────────────────────────────────────────────────
   for (const msg of messages) {
     participantSet.add(msg.sender);
     messagesByUser[msg.sender] = (messagesByUser[msg.sender] || 0) + 1;
@@ -134,6 +175,11 @@ export function computeStats(messages: ParsedMessage[]): ChatStats {
     for (const e of emojis) {
       emojiCount[e] = (emojiCount[e] || 0) + 1;
     }
+
+    // Media / link sharing
+    if (MEDIA_REGEX.test(msg.message) || URL_REGEX.test(msg.message)) {
+      mediaLinkSharer[msg.sender] = (mediaLinkSharer[msg.sender] || 0) + 1;
+    }
   }
 
   const avgWordsPerMessage: Record<string, number> = {};
@@ -157,5 +203,8 @@ export function computeStats(messages: ParsedMessage[]): ChatStats {
     messagesByHour,
     messagesByDayOfWeek,
     topEmojis,
+    conversationStarters,
+    mediaLinkSharer,
+    doubleTexter,
   };
 }
