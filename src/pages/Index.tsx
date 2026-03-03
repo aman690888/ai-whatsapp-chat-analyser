@@ -12,6 +12,11 @@ import {
   WordStatsCard,
 } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
+import { VibeCheckCard } from '@/components/VibeCheckCard';
+import { FileText, RotateCcw, Loader2 } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
+type View = 'upload' | 'loading' | 'dashboard' | 'error';
 import { ChatLensWrapped } from '@/components/ChatLensWrapped';
 import { FileText, RotateCcw, Loader2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -233,6 +238,7 @@ const Index = () => {
 
         {activeTab === 'analytics' ? (
           <div className="space-y-6">
+            <VibeCheckCard stats={stats} />
             <ChatLensWrapped stats={stats} messages={messages} />
             <SummaryCards stats={stats} />
 
