@@ -13,13 +13,6 @@ import {
 } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
 import { VibeCheckCard } from '@/components/VibeCheckCard';
-import { FileText, RotateCcw, Loader2 } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-
-type View = 'upload' | 'loading' | 'dashboard' | 'error';
-import { ChatLensWrapped } from '@/components/ChatLensWrapped';
-import { FileText, RotateCcw, Loader2 } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { FileText, RotateCcw, Loader2, Key } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
@@ -87,23 +80,6 @@ const Index = () => {
       }
     } catch (err) {
       console.error('Unexpected Supabase upload failure:', err);
-    const ext = file.name.split('.').pop() || 'txt';
-    const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-
-    if (!isSupabaseConfigured || !supabase) {
-      console.warn('Supabase upload skipped: missing environment configuration.');
-      return;
-    }
-
-    const { error } = await supabase.storage
-      .from('chat_archives')
-      .upload(path, file, {
-        contentType: 'text/plain',
-        upsert: false,
-      });
-
-    if (error) {
-      console.error('Failed to upload chat archive:', error.message);
     }
   };
 
@@ -244,7 +220,6 @@ const Index = () => {
         {activeTab === 'analytics' ? (
           <div className="space-y-6">
             <VibeCheckCard stats={stats} />
-            <ChatLensWrapped stats={stats} messages={messages} />
             <SummaryCards stats={stats} />
 
             {/* Behavioral metrics row */}
