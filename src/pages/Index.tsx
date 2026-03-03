@@ -1,16 +1,56 @@
-import { useMemo, useState } from 'react';
-import { FileText, Loader2, RotateCcw } from 'lucide-react';
-
-import { AIChat } from '@/components/AIChat';
-import { MessagesPerUserChart, ActivityOverTimeChart } from '@/components/Charts';
-import { SummaryCards } from '@/components/SummaryCards';
+import { useState, useMemo } from 'react';
+import { parseWhatsAppChat, computeStats } from '@/lib/whatsapp-parser';
+import type { ParsedMessage, ChatStats } from '@/lib/whatsapp-parser';
 import { UploadZone } from '@/components/UploadZone';
+import { SummaryCards } from '@/components/SummaryCards';
+import {
+  MessagesPerUserChart,
+  ActivityOverTimeChart,
+  HourlyHeatmapChart,
+  DayOfWeekChart,
+  TopEmojisCard,
+  WordStatsCard,
+} from '@/components/Charts';
+import { AIChat } from '@/components/AIChat';
 import { VibeCheckCard } from '@/components/VibeCheckCard';
+import { FileText, RotateCcw, Loader2 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { computeStats, parseWhatsAppChat } from '@/lib/whatsapp-parser';
-import type { ChatStats, ParsedMessage } from '@/lib/whatsapp-parser';
 
 type View = 'upload' | 'loading' | 'dashboard' | 'error';
+import { ChatLensWrapped } from '@/components/ChatLensWrapped';
+import { FileText, RotateCcw, Loader2 } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { FileText, RotateCcw, Loader2, Key } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
+import { BehaviorCards } from '@/components/BehaviorCards';
+
+type View = 'upload' | 'loading' | 'dashboard' | 'error';
+
+// Inline tiny ApiKey modal used in the analytics tab
+function ApiKeyModal({ onClose }: { onClose: () => void }) {
+  const [value, setVal] = useState(getStoredApiKey);
+  const [saved, setSaved] = useState(false);
+  const save = () => { saveApiKey(value); setSaved(true); setTimeout(() => { setSaved(false); onClose(); }, 900); };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'hsl(0 0% 0% / 0.7)' }}>
+      <div className="w-full max-w-md rounded-2xl p-6 space-y-4 border" style={{ background: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 gradient-red rounded-lg flex items-center justify-center"><Key className="w-4 h-4 text-primary-foreground" /></div>
+            <h2 className="font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Gemini API Key</h2>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted transition-colors" style={{ color: 'hsl(var(--muted-foreground))' }}>✕</button>
+        </div>
+        <p className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Stored only in your browser. Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{ color: 'hsl(var(--primary))' }}>aistudio.google.com</a></p>
+        <input type="password" value={value} onChange={e => setVal(e.target.value)} placeholder="AIza…" className="w-full rounded-xl border px-4 py-2.5 text-sm bg-transparent outline-none focus:border-primary transition-colors" style={{ borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
+        <button onClick={save} disabled={!value.trim()} className="w-full py-2.5 rounded-xl text-sm font-medium gradient-red disabled:opacity-40 flex items-center justify-center gap-2" style={{ color: 'hsl(var(--primary-foreground))' }}>
+          {saved ? '✓ Saved!' : 'Save Key'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const Index = () => {
   const [view, setView] = useState<View>('upload');
@@ -18,6 +58,7 @@ const Index = () => {
   const [messages, setMessages] = useState<ParsedMessage[]>([]);
   const [activeTab, setActiveTab] = useState<'analytics' | 'ai'>('analytics');
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showApiModal, setShowApiModal] = useState(false);
 
   const stats = useMemo<ChatStats | null>(() => {
     if (messages.length === 0) return null;
@@ -46,6 +87,23 @@ const Index = () => {
       }
     } catch (err) {
       console.error('Unexpected Supabase upload failure:', err);
+    const ext = file.name.split('.').pop() || 'txt';
+    const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+    if (!isSupabaseConfigured || !supabase) {
+      console.warn('Supabase upload skipped: missing environment configuration.');
+      return;
+    }
+
+    const { error } = await supabase.storage
+      .from('chat_archives')
+      .upload(path, file, {
+        contentType: 'text/plain',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Failed to upload chat archive:', error.message);
     }
   };
 
@@ -56,6 +114,7 @@ const Index = () => {
 
     void uploadChatArchive(file);
 
+    // Parse in a non-blocking fashion
     setTimeout(() => {
       try {
         const parsed = parseWhatsAppChat(text);
@@ -106,7 +165,11 @@ const Index = () => {
         <p className="text-sm max-w-md" style={{ color: 'hsl(var(--muted-foreground))' }}>
           {uploadError || 'Something unexpected happened while processing your file.'}
         </p>
-        <button onClick={reset} className="px-4 py-2 rounded-lg gradient-red text-sm font-medium" style={{ color: 'hsl(var(--primary-foreground))' }}>
+        <button
+          onClick={reset}
+          className="px-4 py-2 rounded-lg gradient-red text-sm font-medium"
+          style={{ color: 'hsl(var(--primary-foreground))' }}
+        >
           Try another file
         </button>
       </div>
@@ -117,14 +180,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'hsl(var(--background))' }}>
-      <header
-        className="sticky top-0 z-50 border-b"
-        style={{
-          background: 'hsl(var(--card) / 0.9)',
-          borderColor: 'hsl(var(--border))',
-          backdropFilter: 'blur(12px)',
-        }}
-      >
+      {showApiModal && <ApiKeyModal onClose={() => setShowApiModal(false)} />}
+
+      {/* Top Nav */}
+      <header className="sticky top-0 z-50 border-b" style={{ background: 'hsl(var(--card) / 0.9)', borderColor: 'hsl(var(--border))', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 gradient-red rounded-lg flex items-center justify-center" style={{ boxShadow: '0 0 14px hsl(0 85% 50% / 0.4)' }}>
@@ -152,14 +211,25 @@ const Index = () => {
             ))}
           </div>
 
-          <button
-            onClick={reset}
-            className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border transition-colors hover:border-primary/50"
-            style={{ borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">New File</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowApiModal(true)}
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors hover:border-primary/50"
+              style={{ borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
+              title="Gemini API Key"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">API Key</span>
+            </button>
+            <button
+              onClick={reset}
+              className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border transition-colors hover:border-primary/50"
+              style={{ borderColor: 'hsl(var(--border))', color: 'hsl(var(--muted-foreground))' }}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">New File</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -174,10 +244,28 @@ const Index = () => {
         {activeTab === 'analytics' ? (
           <div className="space-y-6">
             <VibeCheckCard stats={stats} />
+            <ChatLensWrapped stats={stats} messages={messages} />
             <SummaryCards stats={stats} />
+
+            {/* Behavioral metrics row */}
+            <BehaviorCards stats={stats} />
+
+            {/* Row 1: messages per user + activity over time */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <MessagesPerUserChart stats={stats} />
               <ActivityOverTimeChart stats={stats} />
+            </div>
+
+            {/* Row 2: hourly heatmap + day of week */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <HourlyHeatmapChart stats={stats} />
+              <DayOfWeekChart stats={stats} />
+            </div>
+
+            {/* Row 3: word stats + top emojis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <WordStatsCard stats={stats} />
+              <TopEmojisCard stats={stats} />
             </div>
           </div>
         ) : (
