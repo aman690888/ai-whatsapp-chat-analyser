@@ -13,8 +13,10 @@ import {
 } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
 import { ChatLensWrapped } from '@/components/ChatLensWrapped';
-import { FileText, RotateCcw, Loader2 } from 'lucide-react';
+import { FileText, RotateCcw, Loader2, Key } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
+import { BehaviorCards } from '@/components/BehaviorCards';
 
 type View = 'upload' | 'loading' | 'dashboard';
 
