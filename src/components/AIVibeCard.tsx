@@ -10,7 +10,7 @@ interface AIVibeCardProps {
 }
 
 const VIBE_PROMPT =
-  "Based on this chat history, summarize the exact relationship dynamic between these two people in 2 sentences. Then, provide a funny, 1-sentence Gen-Z style roast of their texting habits.";
+  'Analyze this WhatsApp chat history and give me a dramatic, deep, and highly detailed psychological breakdown of the relationship dynamic between these two people. Explain their communication styles, who holds the conversational power, any unspoken tension, and the overall vibe of their connection. Write a compelling, detailed paragraph. Finally, hit return twice, and end with a brutal, highly accurate, one-line Gen-Z style roast summarizing their texting habits.';
 
 function renderMarkdown(text: string): string {
   return text
