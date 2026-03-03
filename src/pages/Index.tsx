@@ -13,12 +13,14 @@ import {
 } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
 import { ChatLensWrapped } from '@/components/ChatLensWrapped';
+import { FileText, RotateCcw, Loader2 } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { FileText, RotateCcw, Loader2, Key } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
 import { BehaviorCards } from '@/components/BehaviorCards';
 
-type View = 'upload' | 'loading' | 'dashboard';
+type View = 'upload' | 'loading' | 'dashboard' | 'error';
 
 // Inline tiny ApiKey modal used in the analytics tab
 function ApiKeyModal({ onClose }: { onClose: () => void }) {
@@ -50,6 +52,7 @@ const Index = () => {
   const [filename, setFilename] = useState('');
   const [messages, setMessages] = useState<ParsedMessage[]>([]);
   const [activeTab, setActiveTab] = useState<'analytics' | 'ai'>('analytics');
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [showApiModal, setShowApiModal] = useState(false);
 
   const stats = useMemo<ChatStats | null>(() => {
@@ -58,6 +61,27 @@ const Index = () => {
   }, [messages]);
 
   const uploadChatArchive = async (file: File) => {
+    try {
+      const ext = file.name.split('.').pop() || 'txt';
+      const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+      if (!isSupabaseConfigured || !supabase) {
+        console.warn('Supabase upload skipped: missing environment configuration.');
+        return;
+      }
+
+      const { error } = await supabase.storage
+        .from('chat_archives')
+        .upload(path, file, {
+          contentType: 'text/plain',
+          upsert: false,
+        });
+
+      if (error) {
+        console.error('Failed to upload chat archive:', error.message);
+      }
+    } catch (err) {
+      console.error('Unexpected Supabase upload failure:', err);
     const ext = file.name.split('.').pop() || 'txt';
     const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
@@ -79,6 +103,7 @@ const Index = () => {
   };
 
   const handleFileLoaded = (text: string, name: string, file: File) => {
+    setUploadError(null);
     setView('loading');
     setFilename(name);
 
@@ -86,9 +111,15 @@ const Index = () => {
 
     // Parse in a non-blocking fashion
     setTimeout(() => {
-      const parsed = parseWhatsAppChat(text);
-      setMessages(parsed);
-      setView('dashboard');
+      try {
+        const parsed = parseWhatsAppChat(text);
+        setMessages(parsed);
+        setView('dashboard');
+      } catch (err) {
+        console.error('Failed to parse uploaded chat:', err);
+        setUploadError('Something went wrong while parsing this chat export. Please re-export the WhatsApp .txt file and try again.');
+        setView('error');
+      }
     }, 600);
   };
 
@@ -97,6 +128,7 @@ const Index = () => {
     setMessages([]);
     setFilename('');
     setActiveTab('analytics');
+    setUploadError(null);
   };
 
   if (view === 'upload') return <UploadZone onFileLoaded={handleFileLoaded} />;
@@ -109,6 +141,27 @@ const Index = () => {
         </div>
         <p className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Parsing your chat…</p>
         <p className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>{filename}</p>
+      </div>
+    );
+  }
+
+  if (view === 'error') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center" style={{ background: 'hsl(var(--background))' }}>
+        <div className="w-14 h-14 gradient-red rounded-2xl flex items-center justify-center" style={{ boxShadow: '0 0 30px hsl(0 85% 50% / 0.4)' }}>
+          <FileText className="w-7 h-7 text-primary-foreground" />
+        </div>
+        <p className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Upload failed</p>
+        <p className="text-sm max-w-md" style={{ color: 'hsl(var(--muted-foreground))' }}>
+          {uploadError || 'Something unexpected happened while processing your file.'}
+        </p>
+        <button
+          onClick={reset}
+          className="px-4 py-2 rounded-lg gradient-red text-sm font-medium"
+          style={{ color: 'hsl(var(--primary-foreground))' }}
+        >
+          Try another file
+        </button>
       </div>
     );
   }

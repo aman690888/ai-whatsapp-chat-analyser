@@ -26,6 +26,14 @@ export function UploadZone({ onFileLoaded }: UploadZoneProps) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
+      if (!text) {
+        setError('Could not read this file. Please try exporting the chat again.');
+        return;
+      }
+      onFileLoaded(text, file.name, file);
+    };
+    reader.onerror = () => {
+      setError('Failed to read file. Please try a different .txt export.');
       onFileLoaded(text, file.name, file);
     };
     reader.readAsText(file, 'UTF-8');
