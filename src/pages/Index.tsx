@@ -136,15 +136,20 @@ const Index = () => {
     setUploadError(null);
   };
 
-  if (view === 'upload') return <UploadZone onFileLoaded={handleFileLoaded} />;
+  if (view === 'upload') {
+    return <UploadZone onFileLoaded={handleFileLoaded} />;
+  }
 
   if (view === 'loading') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'hsl(var(--background))' }}>
-        <div className="w-14 h-14 gradient-red rounded-2xl flex items-center justify-center animate-pulse" style={{ boxShadow: '0 0 30px hsl(0 85% 50% / 0.4)' }}>
+        <div
+          className="w-14 h-14 gradient-red rounded-2xl flex items-center justify-center animate-pulse"
+          style={{ boxShadow: '0 0 30px hsl(0 85% 50% / 0.4)' }}
+        >
           <Loader2 className="w-7 h-7 text-primary-foreground animate-spin" />
         </div>
-        <p className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Parsing your chat…</p>
+        <p className="text-lg font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Parsing your chat...</p>
         <p className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>{filename}</p>
       </div>
     );
@@ -190,14 +195,15 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'hsl(var(--muted))' }}>
-            {(['analytics', 'ai'] as const).map(tab => (
+            {(['analytics', 'ai'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
-                style={activeTab === tab
-                  ? { background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
-                  : { color: 'hsl(var(--muted-foreground))' }
+                style={
+                  activeTab === tab
+                    ? { background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
+                    : { color: 'hsl(var(--muted-foreground))' }
                 }
               >
                 {tab === 'analytics' ? '📊 Analytics' : '🤖 AI Chat'}
@@ -228,7 +234,6 @@ const Index = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* File info bar */}
         <div className="flex items-center gap-2 mb-6 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
           <FileText className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />
           <span>{filename}</span>
