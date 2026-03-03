@@ -5,7 +5,9 @@ import { UploadZone } from '@/components/UploadZone';
 import { SummaryCards } from '@/components/SummaryCards';
 import { MessagesPerUserChart, ActivityOverTimeChart } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
+import { ChatLensWrapped } from '@/components/ChatLensWrapped';
 import { FileText, RotateCcw, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 type View = 'upload' | 'loading' | 'dashboard';
 
@@ -20,9 +22,28 @@ const Index = () => {
     return computeStats(messages);
   }, [messages]);
 
-  const handleFileLoaded = (text: string, name: string) => {
+  const uploadChatArchive = async (file: File) => {
+    const ext = file.name.split('.').pop() || 'txt';
+    const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from('chat_archives')
+      .upload(path, file, {
+        contentType: 'text/plain',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Failed to upload chat archive:', error.message);
+    }
+  };
+
+  const handleFileLoaded = (text: string, name: string, file: File) => {
     setView('loading');
     setFilename(name);
+
+    void uploadChatArchive(file);
+
     // Parse in a non-blocking fashion
     setTimeout(() => {
       const parsed = parseWhatsAppChat(text);
@@ -106,6 +127,7 @@ const Index = () => {
 
         {activeTab === 'analytics' ? (
           <div className="space-y-6">
+            <ChatLensWrapped stats={stats} messages={messages} />
             <SummaryCards stats={stats} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <MessagesPerUserChart stats={stats} />
