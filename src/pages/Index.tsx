@@ -12,12 +12,9 @@ import {
   WordStatsCard,
 } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
-import { AIVibeCard } from '@/components/AIVibeCard';
-import { BehaviorCards } from '@/components/BehaviorCards';
-import { FileText, RotateCcw, Loader2, Key } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
-
+import { ChatLensWrapped } from '@/components/ChatLensWrapped';
+import { FileText, RotateCcw, Loader2 } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 type View = 'upload' | 'loading' | 'dashboard';
 
@@ -61,16 +58,31 @@ const Index = () => {
   const uploadChatArchive = async (file: File) => {
     const ext = file.name.split('.').pop() || 'txt';
     const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+
+    if (!isSupabaseConfigured || !supabase) {
+      console.warn('Supabase upload skipped: missing environment configuration.');
+      return;
+    }
+
     const { error } = await supabase.storage
       .from('chat_archives')
-      .upload(path, file, { contentType: 'text/plain', upsert: false });
-    if (error) console.error('Failed to upload chat archive:', error.message);
+      .upload(path, file, {
+        contentType: 'text/plain',
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('Failed to upload chat archive:', error.message);
+    }
   };
 
   const handleFileLoaded = (text: string, name: string, file: File) => {
     setView('loading');
     setFilename(name);
+
     void uploadChatArchive(file);
+
+    // Parse in a non-blocking fashion
     setTimeout(() => {
       const parsed = parseWhatsAppChat(text);
       setMessages(parsed);
@@ -166,13 +178,7 @@ const Index = () => {
 
         {activeTab === 'analytics' ? (
           <div className="space-y-6">
-            {/* AI Vibe Card */}
-            <AIVibeCard
-              messages={messages}
-              stats={stats}
-              onOpenApiKey={() => setShowApiModal(true)}
-            />
-
+            <ChatLensWrapped stats={stats} messages={messages} />
             <SummaryCards stats={stats} />
 
             {/* Behavioral metrics row */}
