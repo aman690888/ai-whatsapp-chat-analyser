@@ -34,6 +34,7 @@ export function UploadZone({ onFileLoaded }: UploadZoneProps) {
     };
     reader.onerror = () => {
       setError('Failed to read file. Please try a different .txt export.');
+      onFileLoaded(text, file.name, file);
     };
     reader.readAsText(file, 'UTF-8');
   };
