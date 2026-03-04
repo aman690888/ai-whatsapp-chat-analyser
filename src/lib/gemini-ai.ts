@@ -70,6 +70,12 @@ export async function askGemini(
           },
         ],
         generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ],
       }),
     }
   );
@@ -81,6 +87,7 @@ export async function askGemini(
   }
 
   const data = await response.json();
+  console.log('RAW GEMINI API DATA:', data);
   const finalResponseText: string =
     data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
   console.log('GEMINI FULL RESPONSE: ', finalResponseText);
