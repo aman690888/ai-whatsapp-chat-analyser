@@ -12,7 +12,7 @@ import {
   WordStatsCard,
 } from '@/components/Charts';
 import { AIChat } from '@/components/AIChat';
-import { VibeCheckCard } from '@/components/VibeCheckCard';
+import { AIVibeCard } from '@/components/AIVibeCard';
 import { FileText, RotateCcw, Loader2, Key } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
@@ -219,7 +219,7 @@ const Index = () => {
 
         {activeTab === 'analytics' ? (
           <div className="space-y-6">
-            <VibeCheckCard stats={stats} />
+            <AIVibeCard messages={messages} stats={stats} onOpenApiKey={() => setShowApiModal(true)} />
             <SummaryCards stats={stats} />
 
             {/* Behavioral metrics row */}
