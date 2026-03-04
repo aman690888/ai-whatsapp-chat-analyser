@@ -15,8 +15,7 @@ const VIBE_PROMPT =
 function renderMarkdown(text: string): string {
   return text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br/>');
+    .replace(/\*(.*?)\*/g, '<em>$1</em>');
 }
 
 export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
@@ -46,7 +45,7 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl border p-5"
+      className="relative rounded-xl border p-5"
       style={{
         background: 'linear-gradient(135deg, hsl(0 85% 50% / 0.08) 0%, hsl(0 0% 10%) 60%)',
         borderColor: 'hsl(0 85% 50% / 0.3)',
@@ -102,7 +101,7 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
 
           {status === 'done' && (
             <p
-              className="text-sm leading-relaxed"
+              className="text-sm leading-relaxed whitespace-pre-wrap"
               style={{ color: 'hsl(var(--foreground) / 0.9)' }}
               dangerouslySetInnerHTML={{ __html: renderMarkdown(result) }}
             />
