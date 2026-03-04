@@ -19,17 +19,15 @@ export function saveApiKey(key: string): void {
 function buildContext(messages: ParsedMessage[], stats: ChatStats): string {
   const topSenders = Object.entries(stats.messagesByUser)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
     .map(([name, count]) => `${name}: ${count} messages`)
     .join(', ');
 
   const busyDays = Object.entries(stats.messagesByDate)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
     .map(([d, c]) => `${d} (${c})`)
     .join(', ');
 
-  // Include a sample of actual messages (last 200) for richer answers
+  // Include actual messages for richer answers
   const sample = messages
     .map(m => `[${m.date} ${m.time}] ${m.sender}: ${m.message}`)
     .join('\n');
@@ -45,7 +43,7 @@ STATISTICS:
 FULL CHAT HISTORY:
 ${sample}
 
-Answer concisely and factually based on the above data.`;
+Answer factually based on the above data.`;
 }
 
 export async function askGemini(
@@ -70,7 +68,13 @@ export async function askGemini(
             parts: [{ text: `${systemContext}\n\nUser question: ${question}` }],
           },
         ],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ],
       }),
     }
   );
@@ -82,7 +86,9 @@ export async function askGemini(
   }
 
   const data = await response.json();
-  const text: string =
+  console.log('RAW GEMINI API DATA:', data);
+  const finalResponseText: string =
     data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
-  return text.trim();
+  console.log('GEMINI FULL RESPONSE: ', finalResponseText);
+  return finalResponseText.trim();
 }
