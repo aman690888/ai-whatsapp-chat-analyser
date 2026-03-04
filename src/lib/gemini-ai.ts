@@ -19,17 +19,15 @@ export function saveApiKey(key: string): void {
 function buildContext(messages: ParsedMessage[], stats: ChatStats): string {
   const topSenders = Object.entries(stats.messagesByUser)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
     .map(([name, count]) => `${name}: ${count} messages`)
     .join(', ');
 
   const busyDays = Object.entries(stats.messagesByDate)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
     .map(([d, c]) => `${d} (${c})`)
     .join(', ');
 
-  // Include a sample of actual messages (last 200) for richer answers
+  // Include actual messages for richer answers
   const sample = messages
     .map(m => `[${m.date} ${m.time}] ${m.sender}: ${m.message}`)
     .join('\n');
@@ -52,7 +50,8 @@ export async function askGemini(
   question: string,
   messages: ParsedMessage[],
   stats: ChatStats,
-  apiKey: string
+  apiKey: string,
+  maxOutputTokens = 2048
 ): Promise<string> {
   if (!apiKey) throw new Error('NO_API_KEY');
 
@@ -70,7 +69,7 @@ export async function askGemini(
             parts: [{ text: `${systemContext}\n\nUser question: ${question}` }],
           },
         ],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+        generationConfig: { temperature: 0.7, maxOutputTokens },
       }),
     }
   );
@@ -82,7 +81,8 @@ export async function askGemini(
   }
 
   const data = await response.json();
-  const text: string =
+  const finalResponseText: string =
     data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
-  return text.trim();
+  console.log('GEMINI FULL RESPONSE: ', finalResponseText);
+  return finalResponseText.trim();
 }
