@@ -45,7 +45,7 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
 
   return (
     <div
-      className="relative rounded-xl border p-5"
+      className="relative h-auto min-h-fit rounded-xl border p-5"
       style={{
         background: 'linear-gradient(135deg, hsl(0 85% 50% / 0.08) 0%, hsl(0 0% 10%) 60%)',
         borderColor: 'hsl(0 85% 50% / 0.3)',
