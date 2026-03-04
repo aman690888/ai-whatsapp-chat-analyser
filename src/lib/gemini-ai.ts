@@ -50,7 +50,8 @@ export async function askGemini(
   question: string,
   messages: ParsedMessage[],
   stats: ChatStats,
-  apiKey: string
+  apiKey: string,
+  maxOutputTokens = 2048
 ): Promise<string> {
   if (!apiKey) throw new Error('NO_API_KEY');
 
