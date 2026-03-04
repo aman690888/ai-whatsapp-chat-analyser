@@ -29,7 +29,7 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
     setStatus('loading');
     setError('');
     try {
-      const answer = await askGemini(VIBE_PROMPT, messages, stats, apiKey);
+      const answer = await askGemini(VIBE_PROMPT, messages, stats, apiKey, 2048);
       setResult(answer);
       setStatus('done');
     } catch (e: unknown) {
