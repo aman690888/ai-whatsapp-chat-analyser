@@ -43,7 +43,7 @@ STATISTICS:
 FULL CHAT HISTORY:
 ${sample}
 
-Answer concisely and factually based on the above data.`;
+Answer factually based on the above data.`;
 }
 
 export async function askGemini(
@@ -69,7 +69,7 @@ export async function askGemini(
             parts: [{ text: `${systemContext}\n\nUser question: ${question}` }],
           },
         ],
-        generationConfig: { temperature: 0.7, maxOutputTokens },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
       }),
     }
   );
