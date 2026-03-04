@@ -70,7 +70,7 @@ export async function askGemini(
             parts: [{ text: `${systemContext}\n\nUser question: ${question}` }],
           },
         ],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
       }),
     }
   );
