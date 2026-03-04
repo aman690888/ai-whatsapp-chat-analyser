@@ -29,7 +29,7 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
     setStatus('loading');
     setError('');
     try {
-      const answer = await askGemini(VIBE_PROMPT, messages, stats, apiKey);
+      const answer = await askGemini(VIBE_PROMPT, messages, stats, apiKey, 2048);
       setResult(answer);
       setStatus('done');
     } catch (e: unknown) {
@@ -45,8 +45,9 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
 
   return (
     <div
-      className="relative h-auto min-h-fit rounded-xl border p-5"
+      className="relative h-auto min-h-fit flex-1 rounded-xl border p-5"
       style={{
+        minHeight: 'fit-content',
         background: 'linear-gradient(135deg, hsl(0 85% 50% / 0.08) 0%, hsl(0 0% 10%) 60%)',
         borderColor: 'hsl(0 85% 50% / 0.3)',
         boxShadow: '0 0 40px hsl(0 85% 50% / 0.07)',
