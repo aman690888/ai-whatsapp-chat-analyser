@@ -1,107 +1,300 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 5%;
-    --foreground: 0 0% 95%;
+    /* Apple-grade color tokens */
+    --bg-base:        221 39% 5%;
+    --bg-elevated:    224 35% 8%;
+    --bg-glass:       224 30% 11%;
+    --bg-glass-raised:224 28% 14%;
 
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 95%;
+    --surface:        224 32% 10%;
+    --surface-hover:  224 28% 13%;
 
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 95%;
+    --border:         220 25% 18%;
+    --border-bright:  220 20% 24%;
 
-    --primary: 0 85% 50%;
-    --primary-foreground: 0 0% 100%;
+    --text-primary:   210 20% 96%;
+    --text-secondary: 215 15% 65%;
+    --text-tertiary:  215 12% 42%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 90%;
+    /* Green WhatsApp accent — Apple-style luminous */
+    --accent:         150 70% 48%;
+    --accent-dim:     150 65% 38%;
+    --accent-glow:    150 80% 55%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 55%;
-
-    --accent: 0 75% 40%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84.2% 60.2%;
+    /* Semantic aliases for shadcn compat */
+    --background:     var(--bg-base);
+    --foreground:     var(--text-primary);
+    --card:           var(--bg-elevated);
+    --card-foreground:var(--text-primary);
+    --popover:        var(--bg-glass);
+    --popover-foreground: var(--text-primary);
+    --primary:        var(--accent);
+    --primary-foreground: 221 39% 5%;
+    --secondary:      var(--bg-glass);
+    --secondary-foreground: var(--text-primary);
+    --muted:          var(--bg-glass);
+    --muted-foreground: var(--text-secondary);
+    --accent-color:   var(--accent);
+    --accent-foreground: 221 39% 5%;
+    --destructive:    0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --ring: 0 85% 50%;
-
-    --radius: 0.75rem;
-
-    --glow-red: 0 85% 50%;
-    --surface: 0 0% 10%;
-    --surface-raised: 0 0% 13%;
+    --border:         220 25% 18%;
+    --input:          var(--bg-glass);
+    --ring:           var(--accent);
+    --radius:         1rem;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  *, *::before, *::after {
+    @apply border-border box-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, sans-serif;
+    background: hsl(var(--bg-base));
+    color: hsl(var(--text-primary));
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    overflow-x: hidden;
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* Apple-style instant press feedback */
+  button:active,
+  [role="button"]:active,
+  label[htmlFor]:active {
+    transform: scale(0.97);
+    transition: transform 80ms ease-out;
   }
-  ::-webkit-scrollbar-track {
-    background: hsl(var(--background));
+
+  ::selection {
+    background: hsl(var(--accent) / 0.3);
+    color: hsl(var(--text-primary));
   }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.4);
-    border-radius: 3px;
+    background: hsl(var(--border-bright));
+    border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.7);
-  }
-
-  /* Apple Design: Instant active feedback */
-  button:active,
-  a:active,
-  label[for="file-upload"]:active,
-  .active-spring:active {
-    transform: scale(0.97);
-    transition: transform 100ms ease-out;
+    background: hsl(var(--accent) / 0.5);
   }
 }
 
-
 @layer components {
-  .glow-border {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.3), 0 0 20px hsl(var(--primary) / 0.1);
+  /* ── Apple Frosted Glass ─────────────────────────────── */
+  .glass {
+    background: hsl(var(--bg-glass) / 0.72);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid hsl(var(--border-bright) / 0.5);
+    border-radius: 18px;
   }
 
+  .glass-raised {
+    background: hsl(var(--bg-glass-raised) / 0.8);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border: 1px solid hsl(var(--border-bright) / 0.6);
+    border-radius: 18px;
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.06) inset,
+      0 24px 48px -12px hsl(0 0% 0% / 0.5),
+      0 4px 16px -4px hsl(0 0% 0% / 0.3);
+  }
+
+  .glass-card {
+    background: hsl(var(--bg-glass) / 0.6);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid hsl(var(--border-bright) / 0.4);
+    border-radius: 16px;
+    box-shadow:
+      0 1px 0 0 hsl(0 0% 100% / 0.04) inset,
+      0 8px 32px -8px hsl(0 0% 0% / 0.4);
+  }
+
+  /* Legacy aliases */
+  .card-dark { @apply glass-card; }
+  .card-dark-raised { @apply glass-raised; }
+
+  /* ── Apple Green Accent ──────────────────────────────── */
+  .accent-glow {
+    background: linear-gradient(135deg, hsl(var(--accent)), hsl(150 75% 38%));
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.4), 0 4px 12px hsl(0 0% 0% / 0.3);
+  }
+
+  .accent-soft {
+    background: hsl(var(--accent) / 0.12);
+    color: hsl(var(--accent));
+    border: 1px solid hsl(var(--accent) / 0.25);
+  }
+
+  /* ── Typography ──────────────────────────────────────── */
+  .label-caps {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(var(--text-tertiary));
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: hsl(var(--text-primary));
+  }
+
+  /* Legacy gradient-red → green accent */
+  .gradient-red { @apply accent-glow; }
+
+  /* ── Backgrounds ─────────────────────────────────────── */
+  .mesh-bg {
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, hsl(150 70% 48% / 0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, hsl(200 70% 50% / 0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 60% at 50% 40%, hsl(260 60% 50% / 0.04) 0%, transparent 50%),
+      hsl(var(--bg-base));
+  }
+
+  /* ── Orb Glow ────────────────────────────────────────── */
+  .orb {
+    pointer-events: none;
+    border-radius: 50%;
+    filter: blur(80px);
+  }
+
+  /* ── Nav ─────────────────────────────────────────────── */
+  .nav-glass {
+    background: hsl(var(--bg-base) / 0.75);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid hsl(var(--border-bright) / 0.3);
+  }
+
+  /* ── Pill tabs ───────────────────────────────────────── */
+  .tab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 200ms ease;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .tab-pill-active {
+    background: hsl(var(--accent));
+    color: hsl(var(--bg-base));
+    box-shadow: 0 0 16px hsl(var(--accent) / 0.35);
+  }
+
+  .tab-pill-inactive {
+    color: hsl(var(--text-secondary));
+  }
+  .tab-pill-inactive:hover {
+    background: hsl(var(--border-bright) / 0.4);
+    color: hsl(var(--text-primary));
+  }
+
+  /* ── Icon badge ──────────────────────────────────────── */
+  .icon-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Shimmer loader ──────────────────────────────────── */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--border)) 25%,
+      hsl(var(--border-bright)) 50%,
+      hsl(var(--border)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Progress bar ────────────────────────────────────── */
+  .progress-bar {
+    height: 4px;
+    border-radius: 999px;
+    background: hsl(var(--border));
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    transition: width 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* ── Chat bubble ─────────────────────────────────────── */
+  .bubble-user {
+    background: linear-gradient(135deg, hsl(var(--accent)), hsl(150 75% 38%));
+    color: hsl(var(--bg-base));
+    border-radius: 18px 4px 18px 18px;
+  }
+  .bubble-ai {
+    background: hsl(var(--bg-glass-raised) / 0.9);
+    border: 1px solid hsl(var(--border-bright) / 0.5);
+    color: hsl(var(--text-primary));
+    border-radius: 4px 18px 18px 18px;
+  }
+
+  /* ── Upload zone ─────────────────────────────────────── */
+  .drop-zone {
+    border: 1.5px dashed hsl(var(--border-bright));
+    border-radius: 20px;
+    transition: border-color 200ms ease, background 200ms ease;
+  }
+  .drop-zone-active {
+    border-color: hsl(var(--accent));
+    background: hsl(var(--accent) / 0.06);
+  }
+
+  /* ── Glow text (legacy) ──────────────────────────────── */
   .glow-text {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.6);
+    text-shadow: 0 0 30px hsl(var(--accent) / 0.5);
   }
 
-  .card-dark {
-    background: hsl(var(--card));
-    border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
-  }
-
-  .card-dark-raised {
-    background: hsl(var(--surface-raised));
-    border: 1px solid hsl(var(--primary) / 0.15);
-    border-radius: var(--radius);
-  }
-
-  .gradient-red {
-    background: linear-gradient(135deg, hsl(0 85% 45%), hsl(0 70% 30%));
-  }
-
-  .gradient-dark {
-    background: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 5%) 100%);
+  /* ── Tooltip-style badge ─────────────────────────────── */
+  .badge-green {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: hsl(var(--accent) / 0.15);
+    color: hsl(var(--accent));
+    border: 1px solid hsl(var(--accent) / 0.3);
   }
 }

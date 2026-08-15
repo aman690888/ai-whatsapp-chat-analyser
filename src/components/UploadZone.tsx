@@ -1,52 +1,37 @@
-import { useState } from 'react';
-import { Upload, FileText, X } from 'lucide-react';
-import { motion } from 'framer-motion';
-import heroBg from '@/assets/hero-bg.jpg';
+import { useState, useCallback } from 'react';
+import { Upload, FileText, X, Shield, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface UploadZoneProps {
   onFileLoaded: (text: string, filename: string, file: File) => void;
 }
+
+const spring = { type: 'spring', bounce: 0, duration: 0.45 } as const;
 
 export function UploadZone({ onFileLoaded }: UploadZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [consentChecked, setConsentChecked] = useState(false);
 
-  const processFile = (file: File) => {
+  const processFile = useCallback((file: File) => {
     setError(null);
-
-    if (!consentChecked) {
-      setError('You must consent to secure storage before uploading.');
-      return;
-    }
-
-    if (!file.name.endsWith('.txt')) {
-      setError('Please upload a .txt file exported from WhatsApp.');
-      return;
-    }
+    if (!consentChecked) { setError('Please consent to secure processing before uploading.'); return; }
+    if (!file.name.endsWith('.txt')) { setError('Please upload a .txt file exported from WhatsApp.'); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      if (!text) {
-        setError('Could not read this file. Please try exporting the chat again.');
-        return;
-      }
+      if (!text) { setError('Could not read this file. Please try exporting again.'); return; }
       onFileLoaded(text, file.name, file);
     };
-    reader.onerror = () => {
-      setError('Failed to read file. Please try a different .txt export.');
-      onFileLoaded(text, file.name, file);
-    };
+    reader.onerror = () => setError('Failed to read file. Try a different .txt export.');
     reader.readAsText(file, 'UTF-8');
-  };
+  }, [consentChecked, onFileLoaded]);
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
+    e.preventDefault(); setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) processFile(file);
   };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
@@ -54,92 +39,136 @@ export function UploadZone({ onFileLoaded }: UploadZoneProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20, scale: 0.98 }}
-      transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{ backgroundImage: `url(${heroBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={spring}
+      className="relative min-h-screen mesh-bg flex flex-col items-center justify-center overflow-hidden px-4"
     >
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+      {/* Ambient orbs */}
+      <div className="orb absolute -top-32 left-1/4 w-96 h-96" style={{ background: 'hsl(var(--accent) / 0.12)' }} />
+      <div className="orb absolute bottom-0 right-1/4 w-80 h-80" style={{ background: 'hsl(200 70% 50% / 0.08)' }} />
 
-      <div className="relative z-10 text-center px-4 max-w-2xl w-full">
-        {/* Logo */}
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 gradient-red rounded-2xl flex items-center justify-center shadow-lg" style={{ boxShadow: '0 0 30px hsl(0 85% 50% / 0.4)' }}>
-              <FileText className="w-6 h-6 text-primary-foreground" />
+      <div className="relative z-10 w-full max-w-lg">
+        {/* Hero */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ ...spring, delay: 0.1 }}
+          className="text-center mb-10"
+        >
+          <div className="inline-flex items-center gap-3 mb-6">
+            <div className="icon-badge accent-glow w-12 h-12 rounded-2xl" style={{ boxShadow: '0 0 32px hsl(var(--accent) / 0.45)' }}>
+              <FileText className="w-6 h-6" style={{ color: 'hsl(var(--bg-base))' }} />
             </div>
-            <span className="text-3xl font-bold tracking-tight glow-text" style={{ color: 'hsl(var(--foreground))' }}>
-              Chat<span style={{ color: 'hsl(var(--primary))' }}>Lens</span>
+            <span className="text-3xl font-bold tracking-tight" style={{ color: 'hsl(var(--text-primary))' }}>
+              Chat<span style={{ color: 'hsl(var(--accent))' }}>Lens</span>
             </span>
           </div>
-          <h1 className="text-5xl font-bold mb-4 leading-tight" style={{ color: 'hsl(var(--foreground))' }}>
-            Analyze Your<br />
-            <span style={{ color: 'hsl(var(--primary))' }} className="glow-text">WhatsApp Chats</span>
-          </h1>
-          <p style={{ color: 'hsl(var(--muted-foreground))' }} className="text-lg">
-            Upload your exported chat file to unlock deep insights, beautiful analytics, and an AI-powered chat assistant.
-          </p>
-        </div>
 
-        {/* Drop Zone */}
-        <motion.label
-          htmlFor="file-upload"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
-          className={`block cursor-pointer rounded-2xl border-2 border-dashed p-12 transition-colors duration-200 ${
-            isDragging
-              ? 'border-primary bg-primary/10'
-              : 'border-border hover:border-primary/50 hover:bg-primary/5'
-          }`}
-          style={{ background: isDragging ? 'hsl(var(--primary) / 0.1)' : 'hsl(var(--card) / 0.7)' }}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
+          <h1 className="text-5xl font-bold tracking-tight leading-[1.08] mb-4" style={{ color: 'hsl(var(--text-primary))' }}>
+            Your WhatsApp<br />
+            <span style={{ color: 'hsl(var(--accent))' }} className="glow-text">Decoded.</span>
+          </h1>
+
+          <p className="text-base leading-relaxed" style={{ color: 'hsl(var(--text-secondary))' }}>
+            Deep analytics, AI insights, and beautiful visualisations — all from a single exported chat file.
+          </p>
+        </motion.div>
+
+        {/* Drop zone */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ ...spring, delay: 0.18 }}
         >
-          <div className="flex flex-col items-center gap-4">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${isDragging ? 'gradient-red scale-110' : 'bg-muted'}`}>
-              <Upload className={`w-8 h-8 ${isDragging ? 'text-primary-foreground' : ''}`} style={{ color: isDragging ? undefined : 'hsl(var(--primary))' }} />
+          <motion.label
+            htmlFor="file-upload"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            transition={spring}
+            className={`drop-zone block cursor-pointer p-10 text-center ${isDragging ? 'drop-zone-active' : ''}`}
+            style={{ background: isDragging ? 'hsl(var(--accent) / 0.06)' : 'hsl(var(--bg-glass) / 0.6)', backdropFilter: 'blur(20px)' }}
+            onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+          >
+            <div className="flex flex-col items-center gap-4">
+              <motion.div
+                animate={isDragging ? { scale: 1.2, rotate: 8 } : { scale: 1, rotate: 0 }}
+                transition={spring}
+                className="icon-badge w-14 h-14 rounded-2xl"
+                style={{ background: isDragging ? 'hsl(var(--accent))' : 'hsl(var(--bg-glass-raised))' }}
+              >
+                <Upload className="w-7 h-7" style={{ color: isDragging ? 'hsl(var(--bg-base))' : 'hsl(var(--accent))' }} />
+              </motion.div>
+
+              <div>
+                <p className="text-base font-semibold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
+                  {isDragging ? 'Release to upload' : 'Drop your WhatsApp export here'}
+                </p>
+                <p className="text-sm" style={{ color: 'hsl(var(--text-secondary))' }}>
+                  or <span style={{ color: 'hsl(var(--accent))' }}>click to browse</span> — .txt files only
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-lg font-semibold mb-1" style={{ color: 'hsl(var(--foreground))' }}>
-                Drop your WhatsApp export here
-              </p>
-              <p style={{ color: 'hsl(var(--muted-foreground))' }}>
-                or <span style={{ color: 'hsl(var(--primary))' }}>click to browse</span> — .txt files only
-              </p>
-            </div>
+            <input id="file-upload" type="file" accept=".txt" className="hidden" onChange={handleChange} />
+          </motion.label>
+        </motion.div>
+
+        {/* Error */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.97 }}
+              transition={spring}
+              className="mt-4 flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm"
+              style={{ background: 'hsl(var(--destructive) / 0.12)', border: '1px solid hsl(var(--destructive) / 0.3)', color: 'hsl(var(--destructive))' }}
+            >
+              <X className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Consent */}
+        <motion.label
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ ...spring, delay: 0.28 }}
+          className="mt-4 flex items-start gap-3 p-4 rounded-2xl cursor-pointer glass-card"
+          style={{ background: 'hsl(var(--bg-glass) / 0.5)' }}
+        >
+          <div
+            className="mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all"
+            style={{ borderColor: consentChecked ? 'hsl(var(--accent))' : 'hsl(var(--border-bright))', background: consentChecked ? 'hsl(var(--accent))' : 'transparent' }}
+          >
+            {consentChecked && <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.4, duration: 0.3 }} className="w-3 h-3" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="hsl(var(--bg-base))" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></motion.svg>}
           </div>
-          <input id="file-upload" type="file" accept=".txt" className="hidden" onChange={handleChange} />
+          <input type="checkbox" checked={consentChecked} onChange={e => { setConsentChecked(e.target.checked); if (e.target.checked) setError(null); }} className="hidden" />
+          <div>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Shield className="w-3.5 h-3.5" style={{ color: 'hsl(var(--accent))' }} />
+              <span className="text-xs font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>Secure & Private</span>
+            </div>
+            <span className="text-xs" style={{ color: 'hsl(var(--text-secondary))' }}>
+              I consent to having this chat file processed for analysis.
+            </span>
+          </div>
         </motion.label>
 
-        {error && (
-          <div className="mt-4 flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'hsl(var(--destructive) / 0.15)', border: '1px solid hsl(var(--destructive) / 0.3)', color: 'hsl(var(--destructive))' }}>
-            <X className="w-4 h-4 shrink-0" />
-            <span className="text-sm">{error}</span>
-          </div>
-        )}
-
-        <label className="mt-4 flex items-start gap-3 text-left p-4 rounded-xl border" style={{ borderColor: 'hsl(var(--border))', background: 'hsl(var(--card) / 0.7)' }}>
-          <input
-            type="checkbox"
-            checked={consentChecked}
-            onChange={(e) => {
-              setConsentChecked(e.target.checked);
-              if (e.target.checked) setError(null);
-            }}
-            className="mt-1 h-4 w-4 accent-red-500"
-          />
-          <span className="text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
-            I consent to having this chat file stored securely for analysis.
-          </span>
-        </label>
-
-        <p className="mt-6 text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>
-          💡 Export: WhatsApp → Chat → More → Export Chat (without media)
-        </p>
+        {/* Export hint */}
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ ...spring, delay: 0.35 }}
+          className="mt-6 flex items-center justify-center gap-2 text-xs"
+          style={{ color: 'hsl(var(--text-tertiary))' }}
+        >
+          <span>WhatsApp</span>
+          <ChevronRight className="w-3 h-3" />
+          <span>Chat</span>
+          <ChevronRight className="w-3 h-3" />
+          <span>More</span>
+          <ChevronRight className="w-3 h-3" />
+          <span>Export Chat (without media)</span>
+        </motion.div>
       </div>
     </motion.div>
   );

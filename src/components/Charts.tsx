@@ -5,76 +5,80 @@ import {
 import { motion } from 'framer-motion';
 import type { ChatStats } from '@/lib/whatsapp-parser';
 
-interface ChartsProps {
-  stats: ChatStats;
-}
+interface ChartsProps { stats: ChatStats; }
 
 const TOOLTIP_STYLE = {
-  backgroundColor: 'hsl(0 0% 10%)',
-  border: '1px solid hsl(0 85% 50% / 0.3)',
-  borderRadius: '8px',
-  color: 'hsl(0 0% 95%)',
+  backgroundColor: 'hsl(224 35% 8%)',
+  border: '1px solid hsl(220 25% 22%)',
+  borderRadius: '12px',
+  color: 'hsl(210 20% 96%)',
   fontSize: 12,
+  padding: '8px 12px',
+  boxShadow: '0 8px 32px hsl(0 0% 0% / 0.5)',
 };
 
+const TICK_STYLE = { fill: 'hsl(215 12% 42%)', fontSize: 11 };
 const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const inView = { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: '-40px' }, transition: { type: 'spring', bounce: 0, duration: 0.5 } } as const;
+
+function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <motion.div {...inView} className="glass-card p-5">
+      <p className="label-caps mb-4">{title}</p>
+      {children}
+    </motion.div>
+  );
+}
 
 export function MessagesPerUserChart({ stats }: ChartsProps) {
   const data = Object.entries(stats.messagesByUser)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
+    .sort((a, b) => b[1] - a[1]).slice(0, 10)
     .map(([name, count]) => ({ name: name.split(' ')[0], count }));
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      className="card-dark-raised p-5">
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
-        Messages Per Participant
-      </h3>
+    <ChartCard title="Messages Per Participant">
       <ResponsiveContainer width="100%" height={240}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <XAxis dataKey="name" tick={{ fill: 'hsl(0 0% 55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: 'hsl(0 0% 55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'hsl(0 85% 50% / 0.05)' }} />
-          <Bar dataKey="count" fill="hsl(0 85% 50%)" radius={[4, 4, 0, 0]} name="Messages" />
+          <XAxis dataKey="name" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+          <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'hsl(var(--accent) / 0.07)' }} />
+          <defs>
+            <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--accent))" />
+              <stop offset="100%" stopColor="hsl(150 65% 38%)" />
+            </linearGradient>
+          </defs>
+          <Bar dataKey="count" fill="url(#barGrad)" radius={[6, 6, 0, 0]} name="Messages" />
         </BarChart>
       </ResponsiveContainer>
-    </motion.div>
+    </ChartCard>
   );
 }
 
 export function ActivityOverTimeChart({ stats }: ChartsProps) {
   const data = Object.entries(stats.messagesByMonth)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .slice(-12)
+    .sort((a, b) => a[0].localeCompare(b[0])).slice(-12)
     .map(([month, count]) => ({ month: month.slice(0, 7), count }));
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      className="card-dark-raised p-5">
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
-        Activity Over Time
-      </h3>
+    <ChartCard title="Activity Over Time">
       <ResponsiveContainer width="100%" height={240}>
         <LineChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 15%)" />
-          <XAxis dataKey="month" tick={{ fill: 'hsl(0 0% 55%)', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: 'hsl(0 0% 55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 25% 16%)" />
+          <XAxis dataKey="month" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+          <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} />
           <Tooltip contentStyle={TOOLTIP_STYLE} />
           <Line
-            type="monotone"
-            dataKey="count"
-            stroke="hsl(0 85% 50%)"
-            strokeWidth={2}
-            dot={{ fill: 'hsl(0 85% 50%)', r: 3 }}
-            activeDot={{ r: 5 }}
+            type="monotone" dataKey="count"
+            stroke="hsl(var(--accent))" strokeWidth={2.5}
+            dot={{ fill: 'hsl(var(--accent))', r: 3, strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: 'hsl(var(--accent))', strokeWidth: 0 }}
             name="Messages"
           />
         </LineChart>
       </ResponsiveContainer>
-    </motion.div>
+    </ChartCard>
   );
 }
 
@@ -85,77 +89,57 @@ export function HourlyHeatmapChart({ stats }: ChartsProps) {
   }));
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      className="card-dark-raised p-5">
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
-        Messages by Hour of Day
-      </h3>
+    <ChartCard title="Messages by Hour">
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="hourGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(0 85% 50%)" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="hsl(0 85% 50%)" stopOpacity={0.02} />
+              <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(0 0% 14%)" />
-          <XAxis dataKey="hour" tick={{ fill: 'hsl(0 0% 50%)', fontSize: 10 }} axisLine={false} tickLine={false} interval={2} />
-          <YAxis tick={{ fill: 'hsl(0 0% 50%)', fontSize: 11 }} axisLine={false} tickLine={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 25% 16%)" />
+          <XAxis dataKey="hour" tick={TICK_STYLE} axisLine={false} tickLine={false} interval={2} />
+          <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} />
           <Tooltip contentStyle={TOOLTIP_STYLE} />
-          <Area
-            type="monotone"
-            dataKey="count"
-            stroke="hsl(0 85% 50%)"
-            strokeWidth={2}
-            fill="url(#hourGrad)"
-            name="Messages"
-            dot={false}
-            activeDot={{ r: 4, fill: 'hsl(0 85% 50%)' }}
-          />
+          <Area type="monotone" dataKey="count" stroke="hsl(var(--accent))" strokeWidth={2.5} fill="url(#hourGrad)" name="Messages" dot={false} activeDot={{ r: 4, fill: 'hsl(var(--accent))', strokeWidth: 0 }} />
         </AreaChart>
       </ResponsiveContainer>
-    </motion.div>
+    </ChartCard>
   );
 }
 
 export function DayOfWeekChart({ stats }: ChartsProps) {
-  const data = DAY_ORDER.map(day => ({
-    day: day.slice(0, 3),
-    count: stats.messagesByDayOfWeek[day] || 0,
-  }));
+  const data = DAY_ORDER.map(day => ({ day: day.slice(0, 3), count: stats.messagesByDayOfWeek[day] || 0 }));
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      className="card-dark-raised p-5">
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
-        Messages by Day of Week
-      </h3>
+    <ChartCard title="Messages by Day">
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <XAxis dataKey="day" tick={{ fill: 'hsl(0 0% 55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: 'hsl(0 0% 55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'hsl(0 85% 50% / 0.05)' }} />
-          <Bar dataKey="count" fill="hsl(0 70% 40%)" radius={[4, 4, 0, 0]} name="Messages" />
+          <XAxis dataKey="day" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+          <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'hsl(var(--accent) / 0.07)' }} />
+          <defs>
+            <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(200 70% 58%)" />
+              <stop offset="100%" stopColor="hsl(200 70% 38%)" />
+            </linearGradient>
+          </defs>
+          <Bar dataKey="count" fill="url(#dayGrad)" radius={[6, 6, 0, 0]} name="Messages" />
         </BarChart>
       </ResponsiveContainer>
-    </motion.div>
+    </ChartCard>
   );
 }
 
 export function TopEmojisCard({ stats }: ChartsProps) {
   const { topEmojis } = stats;
+  const COLORS = ['hsl(var(--accent))', 'hsl(200 70% 58%)', 'hsl(280 70% 65%)', 'hsl(38 90% 60%)', 'hsl(350 80% 65%)'];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      className="card-dark-raised p-5">
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
-        Top Emojis
-      </h3>
+    <ChartCard title="Top Emojis">
       {topEmojis.length === 0 ? (
-        <p className="text-sm py-6 text-center" style={{ color: 'hsl(var(--muted-foreground))' }}>No emojis found in this chat.</p>
+        <p className="text-sm py-6 text-center" style={{ color: 'hsl(var(--text-tertiary))' }}>No emojis found in this chat.</p>
       ) : (
         <div className="flex items-end justify-around gap-2 pt-2 pb-1">
           {topEmojis.map(({ emoji, count }, i) => {
@@ -163,72 +147,55 @@ export function TopEmojisCard({ stats }: ChartsProps) {
             const heightPct = 40 + (count / maxCount) * 60;
             return (
               <div key={emoji} className="flex flex-col items-center gap-2 flex-1">
-                <span className="text-xs font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                  {count.toLocaleString()}
-                </span>
-                <div
-                  className="w-full rounded-t-lg flex items-center justify-center transition-all"
-                  style={{
-                    height: `${heightPct}px`,
-                    background: `hsl(0 ${85 - i * 12}% ${45 + i * 5}% / 0.25)`,
-                    border: `1px solid hsl(0 ${85 - i * 12}% ${45 + i * 5}% / 0.4)`,
-                  }}
+                <span className="text-xs font-semibold" style={{ color: 'hsl(var(--text-tertiary))' }}>{count.toLocaleString()}</span>
+                <motion.div
+                  className="w-full rounded-t-xl flex items-center justify-center"
+                  initial={{ height: 0 }}
+                  animate={{ height: `${heightPct}px` }}
+                  transition={{ type: 'spring', bounce: 0.3, duration: 0.6, delay: i * 0.07 }}
+                  style={{ background: `${COLORS[i]}18`, border: `1px solid ${COLORS[i]}40` }}
                 >
-                  <span style={{ fontSize: `${20 + (4 - i) * 3}px` }}>{emoji}</span>
-                </div>
-                <span className="text-xs font-bold" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                  #{i + 1}
-                </span>
+                  <span style={{ fontSize: `${20 + (4 - i) * 2.5}px` }}>{emoji}</span>
+                </motion.div>
+                <span className="text-xs font-bold badge-green">#{i + 1}</span>
               </div>
             );
           })}
         </div>
       )}
-    </motion.div>
+    </ChartCard>
   );
 }
 
 export function WordStatsCard({ stats }: ChartsProps) {
   const data = Object.entries(stats.wordsByUser)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([name, words]) => ({
-      name: name.split(' ')[0],
-      words,
-      avg: stats.avgWordsPerMessage[name] || 0,
-    }));
+    .sort((a, b) => b[1] - a[1]).slice(0, 8)
+    .map(([name, words]) => ({ name: name.split(' ')[0], words, avg: stats.avgWordsPerMessage[name] || 0 }));
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }} transition={{ type: 'spring', bounce: 0, duration: 0.5 }}
-      className="card-dark-raised p-5">
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider" style={{ color: 'hsl(var(--muted-foreground))' }}>
-        Word Count & Avg Length
-      </h3>
+    <ChartCard title="Word Count & Avg Length">
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <XAxis dataKey="name" tick={{ fill: 'hsl(0 0% 55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: 'hsl(0 0% 55%)', fontSize: 11 }} axisLine={false} tickLine={false} />
-          <Tooltip
-            contentStyle={TOOLTIP_STYLE}
-            cursor={{ fill: 'hsl(0 85% 50% / 0.05)' }}
-            formatter={(value, name) => [value, name === 'words' ? 'Total Words' : 'Avg Words/Msg']}
-          />
-          <Bar dataKey="words" fill="hsl(0 60% 45%)" radius={[4, 4, 0, 0]} name="words" />
+          <XAxis dataKey="name" tick={TICK_STYLE} axisLine={false} tickLine={false} />
+          <YAxis tick={TICK_STYLE} axisLine={false} tickLine={false} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'hsl(var(--accent) / 0.07)' }} formatter={(value, name) => [value, name === 'words' ? 'Total Words' : 'Avg Words/Msg']} />
+          <defs>
+            <linearGradient id="wordGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(280 70% 65%)" />
+              <stop offset="100%" stopColor="hsl(280 65% 45%)" />
+            </linearGradient>
+          </defs>
+          <Bar dataKey="words" fill="url(#wordGrad)" radius={[6, 6, 0, 0]} name="words" />
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-3 flex flex-wrap gap-2">
         {data.slice(0, 5).map(({ name, avg }) => (
-          <div
-            key={name}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs"
-            style={{ background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }}
-          >
-            <span style={{ color: 'hsl(var(--foreground))' }}>{name}</span>
-            <span>~{avg} w/msg</span>
+          <div key={name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs glass-card" style={{ borderRadius: '999px' }}>
+            <span style={{ color: 'hsl(var(--text-primary))' }}>{name}</span>
+            <span style={{ color: 'hsl(var(--text-tertiary))' }}>~{avg} w/msg</span>
           </div>
         ))}
       </div>
-    </motion.div>
+    </ChartCard>
   );
 }
