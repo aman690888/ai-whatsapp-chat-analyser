@@ -3,6 +3,7 @@ import { Sparkles, Loader2, RefreshCw, AlertCircle, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { askGemini, getStoredApiKey } from '@/lib/gemini-ai';
 import type { ParsedMessage, ChatStats } from '@/lib/whatsapp-parser';
+import { formatSimpleMarkdown } from '@/lib/utils';
 
 interface AIVibeCardProps {
   messages: ParsedMessage[];
@@ -12,12 +13,6 @@ interface AIVibeCardProps {
 
 const VIBE_PROMPT =
   'Analyze this WhatsApp chat history and give me a dramatic, deep, and highly detailed psychological breakdown of the relationship dynamic between these two people. Explain their communication styles, who holds the conversational power, any unspoken tension, and the overall vibe of their connection. Write a compelling, detailed paragraph. Finally, hit return twice, and end with a brutal, highly accurate, one-line Gen-Z style roast summarizing their texting habits.';
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>');
-}
 
 export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'nokey' | 'error'>('idle');
@@ -96,7 +91,7 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
                 className="text-sm leading-relaxed whitespace-pre-wrap"
                 style={{ color: 'hsl(var(--text-secondary))' }}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(result) }}
+                dangerouslySetInnerHTML={{ __html: formatSimpleMarkdown(result) }}
               />
             )}
 

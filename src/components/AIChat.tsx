@@ -1,18 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, Key, Check, AlertCircle, X } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Key, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChatMessage } from '@/lib/gemini-ai';
-import { askGemini, getStoredApiKey, saveApiKey } from '@/lib/gemini-ai';
+import { askGemini, getStoredApiKey, GEMINI_MODEL } from '@/lib/gemini-ai';
 import type { ParsedMessage, ChatStats } from '@/lib/whatsapp-parser';
+import { ApiKeyModal } from './ApiKeyModal';
+import { formatSimpleMarkdown } from '@/lib/utils';
 
 interface AIChatProps { messages: ParsedMessage[]; stats: ChatStats; }
-
-function renderMarkdown(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br/>');
-}
 
 const SUGGESTIONS = [
   'Who texts the most?',
@@ -22,64 +17,6 @@ const SUGGESTIONS = [
 ];
 
 const spring = { type: 'spring', bounce: 0, duration: 0.4 } as const;
-
-function ApiKeyModal({ onClose }: { onClose: () => void }) {
-  const [value, setValue] = useState(getStoredApiKey);
-  const [saved, setSaved] = useState(false);
-  const handleSave = () => { saveApiKey(value); setSaved(true); setTimeout(() => { setSaved(false); onClose(); }, 900); };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-      style={{ background: 'hsl(221 39% 5% / 0.85)', backdropFilter: 'blur(8px)' }}
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.92, y: 30, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.92, y: 30, opacity: 0 }}
-        transition={spring}
-        className="glass-raised w-full max-w-md p-6 space-y-5"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-3">
-          <div className="icon-badge accent-glow w-9 h-9 rounded-xl">
-            <Key className="w-4 h-4" style={{ color: 'hsl(var(--bg-base))' }} />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-sm" style={{ color: 'hsl(var(--text-primary))' }}>Gemini API Key</p>
-            <p className="text-xs mt-0.5" style={{ color: 'hsl(var(--text-tertiary))' }}>Stored only in your browser</p>
-          </div>
-          <button onClick={onClose} className="p-1 rounded-xl hover:bg-white/5 transition-colors" style={{ color: 'hsl(var(--text-tertiary))' }}>
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <p className="text-sm" style={{ color: 'hsl(var(--text-secondary))' }}>
-          Get a free key at{' '}
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style={{ color: 'hsl(var(--accent))' }}>
-            aistudio.google.com
-          </a>
-        </p>
-
-        <input
-          type="password" value={value} onChange={e => setValue(e.target.value)}
-          placeholder="AIza…"
-          className="w-full rounded-xl border px-4 py-3 text-sm bg-transparent outline-none transition-colors"
-          style={{ borderColor: 'hsl(var(--border-bright))', color: 'hsl(var(--text-primary))', background: 'hsl(var(--bg-glass) / 0.5)' }}
-        />
-        <button
-          onClick={handleSave} disabled={!value.trim()}
-          className="w-full py-3 rounded-xl text-sm font-semibold accent-glow transition-opacity disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ color: 'hsl(var(--bg-base))' }}
-        >
-          {saved ? <><Check className="w-4 h-4" /> Saved!</> : 'Save Key'}
-        </button>
-      </motion.div>
-    </motion.div>
-  );
-}
 
 export function AIChat({ messages: parsedMessages, stats }: AIChatProps) {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([{
@@ -101,10 +38,11 @@ export function AIChat({ messages: parsedMessages, stats }: AIChatProps) {
     const apiKey = getStoredApiKey();
     if (!apiKey) { setShowSettings(true); return; }
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: question };
-    setChatHistory(h => [...h, userMsg]);
+    const nextHistory = [...chatHistory, userMsg];
+    setChatHistory(nextHistory);
     setInput(''); setLoading(true);
     try {
-      const answer = await askGemini(question, parsedMessages, stats, apiKey);
+      const answer = await askGemini(question, parsedMessages, stats, apiKey, chatHistory);
       setChatHistory(h => [...h, { id: Date.now().toString() + 'a', role: 'assistant', content: answer }]);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -128,7 +66,7 @@ export function AIChat({ messages: parsedMessages, stats }: AIChatProps) {
           </div>
           <div>
             <p className="font-semibold text-sm" style={{ color: 'hsl(var(--text-primary))' }}>Gemini AI Assistant</p>
-            <p className="text-xs mt-0.5" style={{ color: 'hsl(var(--text-tertiary))' }}>Powered by gemini-2.5-flash</p>
+            <p className="text-xs mt-0.5" style={{ color: 'hsl(var(--text-tertiary))' }}>Powered by {GEMINI_MODEL}</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <div className="flex items-center gap-1.5">
@@ -185,7 +123,7 @@ export function AIChat({ messages: parsedMessages, stats }: AIChatProps) {
                 </div>
                 <div
                   className={`max-w-xs lg:max-w-sm px-4 py-2.5 text-sm leading-relaxed ${msg.role === 'user' ? 'bubble-user' : 'bubble-ai'}`}
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                  dangerouslySetInnerHTML={{ __html: formatSimpleMarkdown(msg.content) }}
                 />
               </motion.div>
             ))}

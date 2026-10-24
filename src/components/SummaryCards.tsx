@@ -9,10 +9,6 @@ const CARDS = [
   { icon: Calendar,     label: 'Active Days',     color: 'hsl(38 90% 60%)',  bg: 'hsl(38 90% 50% / 0.12)' },
 ];
 
-export function getColor(index: number): string {
-  return CARDS[index % CARDS.length].color;
-}
-
 interface SummaryCardsProps { stats: ChatStats; }
 
 export function SummaryCards({ stats }: SummaryCardsProps) {

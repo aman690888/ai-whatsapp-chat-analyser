@@ -6,6 +6,8 @@ export interface ChatMessage {
   id: string;
 }
 
+export const GEMINI_MODEL = 'gemini-3.6-flash';
+
 const API_KEY_STORAGE = 'chatlens_gemini_api_key';
 
 export function getStoredApiKey(): string {
@@ -53,24 +55,39 @@ export async function askGemini(
   messages: ParsedMessage[],
   stats: ChatStats,
   apiKey: string,
-  maxOutputTokens = 2048
+  history: ChatMessage[] = [],
+  maxOutputTokens = 4096,
+  model = GEMINI_MODEL
 ): Promise<string> {
   if (!apiKey) throw new Error('NO_API_KEY');
 
   const systemContext = buildContext(messages, stats);
 
+  const validHistory = history
+    .filter(h => h.id !== '0' && h.content.trim().length > 0)
+    .map(h => ({
+      role: h.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: h.content }],
+    }));
+
+  const contents = [
+    ...validHistory,
+    {
+      role: 'user',
+      parts: [{ text: question }],
+    },
+  ];
+
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${systemContext}\n\nUser question: ${question}` }],
-          },
-        ],
+        system_instruction: {
+          parts: [{ text: systemContext }],
+        },
+        contents,
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
           { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -78,16 +95,15 @@ export async function askGemini(
           { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
         ],
         generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4096,
+          maxOutputTokens,
         },
       }),
     }
   );
 
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    const msg = (err as any)?.error?.message || response.statusText;
+    const err = (await response.json().catch(() => ({}))) as { error?: { message?: string } };
+    const msg = err?.error?.message || response.statusText;
     throw new Error(msg);
   }
 

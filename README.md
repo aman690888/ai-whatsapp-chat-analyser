@@ -8,7 +8,7 @@ Single-page React app that parses exported WhatsApp chats (`.txt`), computes ana
 - Tailwind CSS + shadcn/ui primitives
 - Recharts for data visualization
 - Lucide React icons
-- Gemini REST API (`gemini-2.5-flash`)
+- Gemini REST API (`gemini-3.6-flash`)
 
 ## Codebase Structure Review
 

@@ -3,7 +3,7 @@ import { Upload, FileText, X, Shield, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface UploadZoneProps {
-  onFileLoaded: (text: string, filename: string, file: File) => void;
+  onFileLoaded: (text: string, filename: string, file?: File) => void;
 }
 
 const spring = { type: 'spring', bounce: 0, duration: 0.45 } as const;

@@ -25,10 +25,63 @@ export interface ChatStats {
 
 // Matches: DD/MM/YYYY, HH:MM - Sender: Message
 // Also handles MM/DD/YY format
-const MSG_LINE_REGEX = /^(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?)\s*[-–]\s*([^:]+?):\s*(.*)/;
+const MSG_LINE_REGEX = /^(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APap][Mm])?)\s*[-–]\s*([^:]+?):\s*(.*)/;
 
 // Emoji regex — matches most Unicode emoji sequences
 const EMOJI_REGEX = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
+
+export function parseDateTime(dateStr: string, timeStr: string): Date {
+  const parts = dateStr.split(/[/\-.]/);
+  if (parts.length < 3) return new Date();
+
+  let year: number;
+  let month: number;
+  let day: number;
+
+  const p0 = parseInt(parts[0], 10);
+  const p1 = parseInt(parts[1], 10);
+  const rawYear = parseInt(parts[2], 10);
+
+  if (parts[2].length === 4) {
+    year = rawYear;
+    if (p0 > 12) {
+      day = p0;
+      month = p1 - 1;
+    } else if (p1 > 12) {
+      month = p0 - 1;
+      day = p1;
+    } else {
+      day = p0;
+      month = p1 - 1;
+    }
+  } else {
+    year = 2000 + rawYear;
+    if (p0 > 12) {
+      day = p0;
+      month = p1 - 1;
+    } else {
+      month = p0 - 1;
+      day = p1;
+    }
+  }
+
+  const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([APap][Mm]))?/);
+  let hours = 0;
+  let minutes = 0;
+  let seconds = 0;
+
+  if (timeMatch) {
+    hours = parseInt(timeMatch[1], 10);
+    minutes = parseInt(timeMatch[2], 10);
+    if (timeMatch[3]) seconds = parseInt(timeMatch[3], 10);
+    const meridiem = timeMatch[4]?.toUpperCase();
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+  }
+
+  const dateObj = new Date(year, month, day, hours, minutes, seconds);
+  return isNaN(dateObj.getTime()) ? new Date() : dateObj;
+}
 
 export function parseWhatsAppChat(text: string): ParsedMessage[] {
   const lines = text.split('\n');
@@ -42,23 +95,13 @@ export function parseWhatsAppChat(text: string): ParsedMessage[] {
       const [, date, time, sender, message] = match;
       const dateStr = date.trim();
       const timeStr = time.trim();
-      const parts = dateStr.split(/[\/\-\.]/);
-      let dateObj: Date;
-      try {
-        if (parts[2]?.length === 4) {
-          dateObj = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`);
-        } else {
-          dateObj = new Date(`20${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`);
-        }
-      } catch {
-        dateObj = new Date();
-      }
+      const timestamp = parseDateTime(dateStr, timeStr);
       current = {
         date: dateStr,
         time: timeStr,
         sender: sender.trim(),
         message: message.trim(),
-        timestamp: isNaN(dateObj.getTime()) ? new Date() : dateObj,
+        timestamp,
       };
     } else if (current && line.trim()) {
       current.message += '\n' + line.trim();
