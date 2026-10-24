@@ -55,11 +55,14 @@ export async function askGemini(
   messages: ParsedMessage[],
   stats: ChatStats,
   apiKey: string,
-  history: ChatMessage[] = [],
+  historyOrTokens: ChatMessage[] | number = [],
   maxOutputTokens = 4096,
   model = GEMINI_MODEL
 ): Promise<string> {
   if (!apiKey) throw new Error('NO_API_KEY');
+
+  const history = Array.isArray(historyOrTokens) ? historyOrTokens : [];
+  const effectiveTokens = typeof historyOrTokens === 'number' ? historyOrTokens : maxOutputTokens;
 
   const systemContext = buildContext(messages, stats);
 
@@ -95,7 +98,7 @@ export async function askGemini(
           { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
         ],
         generationConfig: {
-          maxOutputTokens,
+          maxOutputTokens: effectiveTokens,
         },
       }),
     }

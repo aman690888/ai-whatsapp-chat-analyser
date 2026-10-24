@@ -24,7 +24,7 @@ export function AIVibeCard({ messages, stats, onOpenApiKey }: AIVibeCardProps) {
     if (!apiKey) { setStatus('nokey'); return; }
     setStatus('loading'); setError('');
     try {
-      const answer = await askGemini(VIBE_PROMPT, messages, stats, apiKey, 2048);
+      const answer = await askGemini(VIBE_PROMPT, messages, stats, apiKey, [], 2048);
       setResult(answer); setStatus('done');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e)); setStatus('error');
